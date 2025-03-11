@@ -1,5 +1,5 @@
 import { pages, subPackages, tabBar } from '@/pages.json'
-import { isMpWeixin } from './platform'
+import { isH5, isMpWeixin } from './platform'
 
 const getLastPage = () => {
   // getCurrentPages() 至少有1个元素，所以不再额外判断
@@ -125,6 +125,21 @@ export const needLoginPages: string[] = getAllPages('needLogin').map((page) => p
 export const getEnvBaseUrl = () => {
   // 请求基准地址
   let baseUrl = import.meta.env.VITE_SERVER_BASEURL
+  const isProxy = JSON.parse(import.meta.env.VITE_APP_PROXY)
+  const proxyPrefix = import.meta.env.VITE_APP_PROXY_PREFIX
+  const mode = import.meta.env.MODE
+
+  if (isH5) {
+    if (mode === 'production') {
+      if (isProxy) {
+        baseUrl = baseUrl + proxyPrefix
+      }
+    } else {
+      if (isProxy) {
+        baseUrl = proxyPrefix
+      }
+    }
+  }
 
   // 微信小程序端环境区分
   if (isMpWeixin) {
