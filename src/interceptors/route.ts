@@ -9,11 +9,6 @@ import { UniCustomToast } from '@/utils/uniToast'
 // TODO Check
 const loginRoute = '/pages-sub/auth/login'
 
-const isLogined = () => {
-  const userStore = useUserStore()
-  return userStore.isLogined
-}
-
 const isDev = import.meta.env.DEV
 
 // 黑名单登录拦截器 - （适用于大部分页面不需要登录，少部分页面需要登录）
@@ -29,14 +24,14 @@ const navigateToInterceptor = {
     } else {
       needLoginPages = _needLoginPages
     }
-    console.log(needLoginPages)
 
     const isNeedLogin = needLoginPages.includes(path)
     if (!isNeedLogin) {
       return true
     }
-    const hasLogin = isLogined()
-    if (hasLogin) {
+    const userStore = useUserStore()
+
+    if (userStore.isLogined) {
       return true
     }
 

@@ -1,4 +1,8 @@
 import { CustomRequestOptions } from '@/interceptors/request'
+import { UniCustomToast } from './uniToast'
+import { ResponseStatusEnum } from '@/typings'
+
+const uniCustomToast = UniCustomToast()
 
 export const http = <T>(options: CustomRequestOptions) => {
   // 1. 返回 Promise 对象
@@ -11,22 +15,33 @@ export const http = <T>(options: CustomRequestOptions) => {
       // #endif
       // 响应成功
       success(res) {
-        // 状态码 2xx，参考 axios 的设计
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          // 2.1 提取核心数据 res.data
+        const resData = res.data as IResData<T>
+        if (resData.code >= 200 && resData.code < 300) {
           resolve(res.data as IResData<T>)
-        } else if (res.statusCode === 401) {
-          // 401错误  -> 清理用户信息，跳转到登录页
-          // userStore.clearUserInfo()
-          // uni.navigateTo({ url: '/pages/login/login' })
+        } else if (resData.code >= 400 && resData.code <= 500) {
+          uniCustomToast.error({
+            msg: resData.message || '请求错误',
+            duration: 200000,
+          })
+          const pages = getCurrentPages() // 获取当前页面栈
+
+          switch (resData.code) {
+            case ResponseStatusEnum.UNAUTHORIZED:
+              if (pages.length > 0) {
+                const currentPage = pages[pages.length - 1] // 当前页面对象
+                const currentPath = currentPage.route
+
+                if (currentPath !== 'pages-sub/auth/login') {
+                  uni.navigateTo({
+                    url: '/pages-sub/auth/login',
+                  })
+                }
+              }
+          }
+
           reject(res)
         } else {
-          // 其他错误 -> 根据后端错误信息轻提示
-          !options.hideErrorToast &&
-            uni.showToast({
-              icon: 'none',
-              title: (res.data as IResData<T>).message || '请求错误',
-            })
+          uniCustomToast.error(resData.message || '请求错误')
           reject(res)
         }
       },
